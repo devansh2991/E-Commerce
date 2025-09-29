@@ -1,0 +1,132 @@
+/* Main container */
+.allproducts-page {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  margin: auto;
+  height: 100vh;
+  width: 90%;
+  margin-bottom: 500px;
+}
+
+/* Inner container for all products */
+.allproducts-container {
+  margin: 50px 0px 30px 19%;
+  padding: 20px 25px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Header row */
+.allproducts-header {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr; /* same fractions for both */
+  align-items: center;
+  font-weight: 600;
+  color: #333;
+  padding: 12px 50px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+  gap: 80px;
+}
+
+/* Each product row */
+.allproducts-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr; /* same as header */
+  align-items: center;
+  padding: 22px 20px 22px 20px;
+  text-align: center;
+  gap: 90px;
+  border-bottom: 1px solid #f1f1f1;
+  transition: background 0.2s ease;
+}
+
+.allproducts-row:hover {
+  background: #f9f9ff; /* subtle hover effect */
+}
+
+.allproducts-row:last-child {
+  border-bottom: none;
+}
+
+/* Product image */
+.allproducts-img {
+  width: 90px;
+  height: 110px;
+  margin-left: 20px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+/* Product details */
+.allproducts-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Category & price */
+.allproducts-category,
+.allproducts-price {
+  font-size: 14px;
+  color: #555;
+}
+
+/* Old price (strikethrough) */
+.allproducts-oldprice {
+  text-decoration: line-through;
+  color: #aaa;
+  margin-right: 6px;
+}
+
+/* Optional action buttons (edit/delete) */
+.allproducts-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.allproducts-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.allproducts-btn-edit {
+  background: #3f3fff;
+}
+
+.allproducts-btn-edit:hover {
+  background: #1f1fff;
+  transform: translateY(-1px);
+}
+
+.allproducts-btn-delete {
+  background: #ff4141;
+}
+
+.allproducts-btn-delete:hover {
+  background: #e63a3a;
+  transform: translateY(-1px);
+}
+
+/* Empty products */
+.empty-products {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  font-size: 16px;
+}

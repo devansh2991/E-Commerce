@@ -1,0 +1,178 @@
+/* ================================
+   Add Product Container
+================================ */
+.add-product-container {
+  width: 75%;
+  margin: 40px 0px 40px 21.5%; /* center form horizontally */
+  padding: 30px 50px;
+  background: linear-gradient(135deg, #faf8ff, #f4f9ff);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  transition: transform 0.2s ease;
+}
+
+.add-product-container:hover {
+  transform: translateY(-2px);
+}
+
+/* ================================
+   Section Titles
+================================ */
+.addproduct-itemfield p {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #4a3f80;
+}
+
+/* ================================
+   Inputs & Textareas
+================================ */
+.addproduct-itemfield input,
+.addproduct-itemfield textarea,
+.add-product-selector {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box,
+              linear-gradient(90deg, #6a11cb, #2575fc) border-box;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.addproduct-itemfield input:focus,
+.addproduct-itemfield textarea:focus,
+.add-product-selector:focus {
+  background: linear-gradient(#f9f8ff, #f9f8ff) padding-box,
+              linear-gradient(90deg, #8a2be2, #00c6ff) border-box;
+  box-shadow: 0 0 10px rgba(130, 90, 250, 0.3);
+}
+
+/* ================================
+   Price & Quantity Row
+================================ */
+.addproduct-price {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.addproduct-price .addproduct-itemfield {
+  flex: 1;
+}
+
+/* ================================
+   Sizes (Checkboxes)
+================================ */
+.addproduct-itemfield label {
+  margin-right: 18px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a3f80;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.addproduct-itemfield input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+/* ================================
+   Image Upload
+================================ */
+.addproduct-main-img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border: 2px dashed #b6b8f3;
+  border-radius: 14px;
+  cursor: pointer;
+  margin-bottom: 14px;
+  background: #fafaff;
+  transition: border-color 0.3s ease;
+}
+
+.addproduct-main-img:hover {
+  border-color: #6366f1;
+}
+
+.addproduct-multiple-preview {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  width: 100%;
+  padding: 8px 0;
+  scrollbar-width: none; /* Firefox */
+}
+
+.addproduct-multiple-preview::-webkit-scrollbar {
+  display: none; /* Chrome */
+}
+
+.addproduct-multiple-preview img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #d0d4f7;
+  transition: transform 0.2s ease;
+}
+
+.addproduct-multiple-preview img:hover {
+  transform: scale(1.08);
+}
+
+/* ================================
+   Add Button
+================================ */
+.addproduct-btn {
+  margin-top: 12px;
+  padding: 14px 26px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.addproduct-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);
+}
+
+.addproduct-btn:active {
+  transform: scale(0.96);
+}
+
+/* ================================
+   Responsive
+================================ */
+@media (max-width: 600px) {
+  .add-product-container {
+    width: 95%;
+    padding: 20px;
+    margin: 20px auto;
+  }
+  .addproduct-main-img {
+    height: 200px;
+  }
+  .addproduct-multiple-preview img {
+    width: 52px;
+    height: 52px;
+  }
+}

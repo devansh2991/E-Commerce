@@ -1,0 +1,205 @@
+/* ================================
+   Edit Product Container
+================================ */
+.edit-product {
+  width: 90%;
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 30px 40px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-family: "Poppins", sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.edit-product h2 {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: #4a3f80;
+}
+
+/* ================================
+   Form Fields
+================================ */
+.editproduct-itemfield {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+.editproduct-itemfield p {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.editproduct-itemfield input,
+.editproduct-itemfield select,
+.editproduct-itemfield textarea {
+  padding: 12px 16px;
+  margin-right: 50px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.editproduct-itemfield textarea {
+  resize: none;
+  min-height: 100px;
+}
+
+/* ================================
+   Price & Quantity Row
+================================ */
+.editproduct-price {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.editproduct-price .editproduct-itemfield {
+  flex: 1;
+}
+
+/* ================================
+   Sizes / Checkboxes
+================================ */
+.editproduct-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: nowrap; /* keep in single row */
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a3f80;
+  margin-top: 6px;
+}
+
+.editproduct-checkbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.editproduct-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* ================================
+   Image Upload
+================================ */
+.editproduct-thumbnail-img {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 2px dashed #b6b8f3;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: border-color 0.3s ease, transform 0.2s ease;
+}
+
+.editproduct-thumbnail-img:hover {
+  border-color: #6366f1;
+  transform: scale(1.03);
+}
+
+/* ================================
+   Update Button
+================================ */
+.editproduct-btn {
+  width: 100%;
+  padding: 14px 0;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.editproduct-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);
+}
+
+.editproduct-btn:active {
+  transform: scale(0.96);
+}
+
+.addproduct-multiple-preview {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.thumbnail-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.addproduct-thumbnail-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.2s;
+}
+
+.addproduct-thumbnail-img:hover {
+  border: 2px solid #007bff;
+}
+
+.remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+
+/* ================================
+   Responsive
+================================ */
+@media (max-width: 600px) {
+  .edit-product {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .editproduct-price {
+    flex-direction: column;
+  }
+
+  .editproduct-thumbnail-img {
+    width: 140px;
+    height: 140px;
+  }
+
+  .editproduct-checkbox {
+    flex-wrap: wrap; /* allow wrapping on very small screens */
+    gap: 12px;
+  }
+}

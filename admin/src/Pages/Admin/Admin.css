@@ -1,0 +1,63 @@
+/* Admin Container */
+.admin {
+  display: flex;
+  min-height: 100vh; /* full viewport height */
+  background: #f5f5f5;
+  box-sizing: border-box;
+}
+
+/* Sidebar */
+.admin .sidebar {
+  width: 250px; /* adjust width as needed */
+  min-height: 100vh;
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+  position: fixed; /* keeps sidebar fixed while scrolling */
+  top: 0;
+  left: 0;
+  z-index: 50;
+  padding-top: 100px; /* space for navbar if needed */
+}
+
+/* Main Content (routes) */
+.admin > .routes {
+  margin-left: 250px; /* same as sidebar width */
+  flex: 1;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+/* Make sure content inside routes scrolls if overflow */
+.admin > .routes > * {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 768px) {
+  .admin .sidebar {
+    width: 200px;
+    padding-top: 50px;
+  }
+  .admin > .routes {
+    margin-left: 200px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .admin {
+    flex-direction: column;
+  }
+  .admin .sidebar {
+    width: 100%;
+    position: relative;
+    padding-top: 0;
+  }
+  .admin > .routes {
+    margin-left: 0;
+    padding: 15px;
+  }
+}

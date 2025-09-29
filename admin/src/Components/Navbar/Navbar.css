@@ -1,0 +1,33 @@
+/* Navbar Container */
+.navbar {
+  display: flex;
+  justify-content: space-between; /* logo left, profile right */
+  align-items: center;
+  padding: 14px 40px 14px 80px;
+  background: linear-gradient(90deg, #fef9f9, #fdf6ff, #f7fcff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Logo */
+.nav-logo {
+  width: 200px;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+/* Profile Icon */
+.nav-profile {
+  padding: 0px 80px;
+  width: 62px;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.nav-profile:hover {
+  transform: scale(1.1);
+}

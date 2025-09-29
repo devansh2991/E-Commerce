@@ -1,0 +1,30 @@
+/* Center container */
+.homepage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+  width: 100%;
+  background: #fff; /* plain background */
+}
+
+/* Smooth pink–purple animated text */
+.greeting {
+  font-size: 5rem;
+  padding-left: 200px;
+  padding-bottom: 100px;
+  font-weight: bold;
+  background: linear-gradient(270deg, #ff6ec4, #7873f5);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textFlow 6s ease-in-out infinite;
+  text-align: center;
+}
+
+/* Keyframes for smooth gradient flow */
+@keyframes textFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
