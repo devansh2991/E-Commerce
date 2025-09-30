@@ -9,10 +9,79 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const port = 4000;
 
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
+
 // Middleware
 app.use(express.json());
 app.use(cors());
 app.use("/images", express.static("upload/images"));
+app.use(express.urlencoded({ extended: true }));
+
+const razorpay = new Razorpay({
+  key_id: "rzp_test_RNoJZSZrkLgxK7",
+  key_secret: "msw5Wxh6NtW6eg3O7YYpP03s",
+});
+
+app.post("/payment/orders/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const cart = await Cart.findOne({ userId: userId });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ success: false, message: "Cart is empty" });
+    }
+
+    // Convert cart productIds to ObjectId
+    const productIds = cart.items.map(item => new mongoose.Types.ObjectId(item.productId));
+
+    const products = await Product.find({ _id: { $in: productIds } });
+
+    if (!products || products.length === 0) {
+      return res.status(400).json({ success: false, message: "Products not found" });
+    }
+
+    let totalAmount = 0;
+    cart.items.forEach(item => {
+      const product = products.find(p => p._id.toString() === item.productId);
+      if (product) totalAmount += product.price * item.quantity;
+    });
+
+    if (totalAmount === 0) {
+      return res.status(400).json({ success: false, message: "Total amount is 0" });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: totalAmount * 100,
+      currency: "INR",
+      receipt: `order_rcptid_${Date.now()}`,
+    });
+
+    res.json({ success: true, order, totalAmount, items: cart.items });
+  } catch (err) {
+    console.error("Order creation failed:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// Verify payment
+app.post("/payment/verify", (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  const sign = razorpay_order_id + "|" + razorpay_payment_id;
+  const expectedSign = crypto
+    .createHmac("sha256", process.env.RAZORPAY_SECRET || "msw5Wxh6NtW6eg3O7YYpP03s")
+    .update(sign.toString())
+    .digest("hex");
+
+  if (razorpay_signature === expectedSign) {
+    return res.json({ success: true, message: "Payment verified" });
+  } else {
+    return res.json({ success: false, message: "Invalid signature" });
+  }
+});
+
 
 // --------------------
 // MongoDB Connection
@@ -163,20 +232,32 @@ app.post("/cart/:userId/removeOne", async (req, res) => {
 app.post("/cart/:userId/removeAll", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { productId, size } = req.body;
+    const { productId, size } = req.body || {};
 
-    const cart = await Cart.findOne({ userId: new mongoose.Types.ObjectId(userId) });
-    if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid userId" });
+    }
 
-    cart.items = cart.items.filter(i => !(i.productId === productId && i.size === size));
-    await cart.save();
+    if (productId === undefined || size === undefined) {
+      return res.status(400).json({ success: false, message: "productId and size are required" });
+    }
 
-    res.json({ success: true, cart });
+    const result = await Cart.updateOne(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $pull: { items: { productId: Number(productId), size } } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ success: false, message: "Item not found in cart" });
+    }
+
+    res.json({ success: true, message: "Item removed" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("RemoveAll Error:", err);
+    res.status(500).json({ success: false, message: "Server error while removing item" });
   }
 });
+
 
 
 // --------------------
