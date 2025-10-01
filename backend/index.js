@@ -6,6 +6,8 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const axios = require("axios");
+
 const app = express();
 const port = 4000;
 
