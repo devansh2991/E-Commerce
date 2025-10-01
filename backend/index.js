@@ -26,27 +26,45 @@ const razorpay = new Razorpay({
 });
 
 // Payment order API
-// Payment order API
 app.post("/payment/orders/:userId", async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { userId } = req.params;
 
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ success: false, message: "Invalid amount" });
+    const cart = await Cart.findOne({ 
+      userId: mongoose.Types.ObjectId.isValid(userId) 
+        ? new mongoose.Types.ObjectId(userId) 
+        : userId 
+    });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ success: false, message: "Cart is empty" });
+    }
+
+    // Use numeric id instead of _id
+    const productIds = cart.items.map(item => item.productId);
+    const products = await Product.find({ id: { $in: productIds } });
+
+    if (!products || products.length === 0) {
+      return res.status(400).json({ success: false, message: "Products not found" });
+    }
+
+    let totalAmount = 0;
+    cart.items.forEach(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (product) totalAmount += product.new_price * item.quantity;
+    });
+
+    if (totalAmount === 0) {
+      return res.status(400).json({ success: false, message: "Total amount is 0" });
     }
 
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // convert rupees to paise
+      amount: totalAmount * 100,
       currency: "INR",
       receipt: `order_rcptid_${Date.now()}`,
     });
 
-    res.json({
-      success: true,
-      id: order.id,
-      currency: order.currency,
-      amount: order.amount, // already in paise
-    });
+    res.json({ success: true, order, totalAmount, items: cart.items });
   } catch (err) {
     console.error("Order creation failed:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -260,9 +278,9 @@ app.post("/cart/:userId/removeAll", async (req, res) => {
 
 
 
-
+// --------------------
 // Routes
-
+// --------------------
 
 // Root
 app.get("/", (req, res) => {
@@ -275,8 +293,9 @@ app.post("/upload", upload.single("product"), (req, res) => {
   res.json({ success: true, image_url: `http://localhost:${port}/images/${req.file.filename}` });
 });
 
-
+// --------------------
 // Product APIs
+// --------------------
 
 // Add product
 app.post("/addproduct", async (req, res) => {
@@ -369,9 +388,9 @@ app.delete("/product/:id", async (req, res) => {
   }
 });
 
-
+// --------------------
 // User APIs
-
+// --------------------
 
 // Register user
 app.post("/register", async (req, res) => {
@@ -415,9 +434,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
+// --------------------
 // Start Server
-
+// --------------------
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
