@@ -25,41 +25,28 @@ const razorpay = new Razorpay({
   key_secret: "msw5Wxh6NtW6eg3O7YYpP03s",
 });
 
+// Payment order API
+// Payment order API
 app.post("/payment/orders/:userId", async (req, res) => {
   try {
-    const { userId } = req.params;
-    const cart = await Cart.findOne({ userId: userId });
+    const { amount } = req.body;
 
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ success: false, message: "Cart is empty" });
-    }
-
-    // Convert cart productIds to ObjectId
-    const productIds = cart.items.map(item => new mongoose.Types.ObjectId(item.productId));
-
-    const products = await Product.find({ _id: { $in: productIds } });
-
-    if (!products || products.length === 0) {
-      return res.status(400).json({ success: false, message: "Products not found" });
-    }
-
-    let totalAmount = 0;
-    cart.items.forEach(item => {
-      const product = products.find(p => p._id.toString() === item.productId);
-      if (product) totalAmount += product.price * item.quantity;
-    });
-
-    if (totalAmount === 0) {
-      return res.status(400).json({ success: false, message: "Total amount is 0" });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid amount" });
     }
 
     const order = await razorpay.orders.create({
-      amount: totalAmount * 100,
+      amount: Math.round(amount * 100), // convert rupees to paise
       currency: "INR",
       receipt: `order_rcptid_${Date.now()}`,
     });
 
-    res.json({ success: true, order, totalAmount, items: cart.items });
+    res.json({
+      success: true,
+      id: order.id,
+      currency: order.currency,
+      amount: order.amount, // already in paise
+    });
   } catch (err) {
     console.error("Order creation failed:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -69,34 +56,47 @@ app.post("/payment/orders/:userId", async (req, res) => {
 
 // Verify payment
 app.post("/payment/verify", (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-  const sign = razorpay_order_id + "|" + razorpay_payment_id;
-  const expectedSign = crypto
-    .createHmac("sha256", process.env.RAZORPAY_SECRET || "msw5Wxh6NtW6eg3O7YYpP03s")
-    .update(sign.toString())
-    .digest("hex");
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Missing payment details" });
+    }
 
-  if (razorpay_signature === expectedSign) {
-    return res.json({ success: true, message: "Payment verified" });
-  } else {
-    return res.json({ success: false, message: "Invalid signature" });
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET) // ✅ always from env
+      .update(sign)
+      .digest("hex");
+
+    if (razorpay_signature === expectedSign) {
+      return res.json({
+        success: true,
+        message: "Payment verified successfully",
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+      });
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+  } catch (err) {
+    console.error("Payment verification failed:", err);
+    res.status(500).json({ success: false, message: "Server error during verification" });
   }
 });
 
 
-// --------------------
 // MongoDB Connection
-// --------------------
+
 const MONGO_URI = "mongodb+srv://devanshkushwah90:Dev2005@cluster0.swmpxgd.mongodb.net/E-Commerce?retryWrites=true&w=majority";
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.error("MongoDB Connection Error:", err));
 
-// --------------------
+
 // Multer Setup for Image Upload
-// --------------------
+
 const storage = multer.diskStorage({
   destination: "./upload/images",
   filename: (req, file, cb) => {
@@ -105,9 +105,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --------------------
 // Product Schema
-// --------------------
+
 const productSchema = new mongoose.Schema({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
@@ -125,9 +124,9 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model("Product", productSchema);
 
-// --------------------
+
 // User Schema
-// --------------------
+
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -143,9 +142,8 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 const User = mongoose.model("User", userSchema);
 
-// --------------------
 // Cart Schema
-// --------------------
+
 const cartSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   items: [
@@ -159,9 +157,9 @@ const cartSchema = new mongoose.Schema({
 
 const Cart = mongoose.model("Cart", cartSchema);
 
-// --------------------
+
 // Cart APIs
-// --------------------
+
 
 // Get user's cart
 app.get("/cart/:userId", async (req, res) => {
@@ -262,9 +260,9 @@ app.post("/cart/:userId/removeAll", async (req, res) => {
 
 
 
-// --------------------
+
 // Routes
-// --------------------
+
 
 // Root
 app.get("/", (req, res) => {
@@ -277,9 +275,8 @@ app.post("/upload", upload.single("product"), (req, res) => {
   res.json({ success: true, image_url: `http://localhost:${port}/images/${req.file.filename}` });
 });
 
-// --------------------
+
 // Product APIs
-// --------------------
 
 // Add product
 app.post("/addproduct", async (req, res) => {
@@ -372,9 +369,9 @@ app.delete("/product/:id", async (req, res) => {
   }
 });
 
-// --------------------
+
 // User APIs
-// --------------------
+
 
 // Register user
 app.post("/register", async (req, res) => {
@@ -418,9 +415,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// --------------------
+
 // Start Server
-// --------------------
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
