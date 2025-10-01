@@ -19,19 +19,19 @@ This project is currently in **development phase**.
 
 ### Homepage
 
-![Homepage Screenshot](./screenshots/homepage.png)
+![Screenshot of E-Commerce](Screenshots/Screenshot%202025-09-29%20231204.png)
 
 ### Product Listing
 
-![Product Listing](./screenshots/products.png)
+![Product Listing](Screenshots/Screenshot%2025-09-29%231138.png)
 
 ### Shopping Cart
 
-![Shopping Cart](./screenshots/cart.png)
+![Shopping Cart](Screenshots/Screenshot%2025-09-29%231232.png)
 
-### Checkout Page
+### Product Display
 
-![Checkout](./screenshots/checkout.png)
+![Product Display](Screenshots/Screenshot%2025-09-29%231223.png)
 
 ---
 
