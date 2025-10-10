@@ -1,0 +1,116 @@
+.footer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;                  /* reduced gap slightly */
+  padding: 40px;           /* reduced top/bottom padding */
+  background: #f8f8f8;
+  box-shadow: inset 0 6px 10px rgba(0,0,0,0.02);
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.footer-logo p {
+  font-size: 40px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 1px;
+    background: linear-gradient(90deg, #ff00bb, #3813c2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer-links {
+  display: flex;
+  list-style: none;
+  gap: 40px;
+  color: #252525;
+  font-size: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.footer-links li::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #ff6fd8;
+  transition: width 0.3s ease;
+}
+
+.footer-links li:hover {
+  color: #ff6fd8;
+}
+
+.footer-links li:hover::after {
+  width: 100%;
+}
+
+.footer-social-icon {
+  display: flex;
+  gap: 15px;
+}
+
+.footer-icons-container {
+  padding: 10px;
+  background: #d8d8d8;      /* dark icons */
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.footer-icons-container:hover {
+  transform: scale(1.1);
+   /* hover highlight */
+}
+
+.footer-copyright {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  color: #1a1a1a;
+  font-size: 16px;
+}
+
+.footer-copyright hr {
+  width: 80%;
+  border: none;
+  border-radius: 10px;
+  height: 3px;
+  background: #c7c7c7;
+}
+
+/* 📱 Responsive */
+@media (max-width: 768px) {
+  .footer-links {
+    gap: 15px;
+    font-size: 14px;
+  }
+
+  .footer-logo p {
+    font-size: 28px;
+  }
+
+  .footer-icons-container {
+    padding: 8px;
+  }
+}

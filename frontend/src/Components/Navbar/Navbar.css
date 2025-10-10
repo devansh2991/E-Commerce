@@ -1,0 +1,169 @@
+/* Navbar Container */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 40px;
+  background: linear-gradient(90deg, #fef9f9, #fdf6ff, #f7fcff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Logo Section */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-logo img {
+  width: 42px;
+  height: auto;
+}
+
+.nav-logo p {
+  font-size: 20px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #ff6fd8, #3813c2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Menu Section */
+.nav-menu {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu li {
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-menu li a {
+  text-decoration: none;
+  color: inherit;
+  font-weight: 500;
+  padding: 5px 0;
+}
+
+.nav-menu li:hover {
+  color: #ff6fd8;
+}
+
+/* Active menu underline */
+.nav-menu li a.active-menu {
+  font-weight: 600;
+  position: relative;
+}
+
+.nav-menu li a.active-menu::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6fd8, #3813c2);
+  border-radius: 2px;
+}
+
+/* Login + Cart Section */
+.nav-login-cart {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 25px;
+  position: relative; /* for badge positioning */
+}
+
+/* Buttons */
+.nav-login-cart button {
+  width: 100px;
+  height: 36px;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #ff6fd8, #3813c2);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.nav-login-cart button:hover {
+  transform: scale(1.05);
+}
+
+/* Cart Icon */
+.nav-login-cart img {
+  width: 32px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+/* Bounce animation */
+.bounce {
+  animation: bounceAnim 0.6s ease;
+}
+
+@keyframes bounceAnim {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Cart Count Badge */
+.nav-cart-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  background: #ff6fd8;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  pointer-events: none; /* allow clicks to pass to cart icon */
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .navbar {
+    flex-direction: column;
+    padding: 14px 20px;
+    gap: 10px;
+  }
+
+  .nav-logo {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-menu {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .nav-login-cart {
+    width: 100%;
+    justify-content: center;
+    gap: 15px;
+  }
+}

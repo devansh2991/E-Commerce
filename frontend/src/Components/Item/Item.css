@@ -1,0 +1,59 @@
+.item {
+    width: 300px;
+}
+
+.item img {
+    width: 300px;
+}
+
+.item p {
+    margin: 6px 0px;
+}
+
+/* Updated price section to include button */
+.item-price {
+    display: flex;
+    gap: 10px;           /* adjust spacing */
+    align-items: center; /* vertically center prices and button */
+}
+
+.item-price-container{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.item-price-new {
+    color: #374151;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.item-price-old {
+    color: #8c8c8c;
+    font-size: 18px;
+    font-weight: 500;
+    text-decoration: line-through;
+}
+
+.add-to-cart-btn {
+    width: 80px;
+    background: #ff4141;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.add-to-cart-btn:hover {
+    background: #ff6f6f;
+}
+
+.item:hover {
+    transform: scale(1.05);
+    transition: 0.6s;
+}

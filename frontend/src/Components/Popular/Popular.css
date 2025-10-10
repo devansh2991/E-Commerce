@@ -1,0 +1,94 @@
+.popular {
+  max-width: 1200px;         /* keep section neat */
+  margin: 0 auto;            /* center section */
+  padding: 0px 0px 80px 0px;          /* breathing space */
+  text-align: center;
+}
+
+.popular h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.popular hr {
+  width: 80px;
+  height: 3px;
+  margin: 12px auto 40px;
+  border: none;
+  background: linear-gradient(90deg, #ff6fd8, #3813c2);
+  border-radius: 4px;
+}
+
+.popular-item {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));            
+  justify-items: center;     
+  align-items: center;    
+  gap: 50px;   
+  margin-top: 20px;          /* buffer from screen edge */
+}
+
+/* Each product card */
+.popular-item .item {
+  width: 150%;
+  max-width: 250px;          /* prevent oversized cards */
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.popular-item .item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Product image */
+.popular-item .item img {
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+
+.popular-item .item:hover img {
+  transform: scale(1.04);
+}
+
+/* Product name */
+.popular-item .item p {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin: 6px 0 10px;
+  min-height: 40px;          /* keeps text height consistent */
+}
+
+/* Price section */
+.popular-item .item-prices {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.popular-item .item-new-price {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ff6fd8;
+}
+
+.popular-item .item-old-price {
+  font-size: 14px;
+  text-decoration: line-through;
+  color: #888;
+}

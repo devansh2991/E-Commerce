@@ -1,0 +1,97 @@
+/* =========================
+   Related Products Section
+   ========================= */
+.relatedproducts {
+  max-width: 1200px;         /* keep section neat and centered */
+  margin: 0 auto;
+  padding: 0 20px 80px 20px; /* bottom breathing space */
+  text-align: center;
+}
+
+.relatedproducts h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.relatedproducts hr {
+  width: 80px;
+  height: 3px;
+  margin: 12px auto 40px;
+  border: none;
+  background: linear-gradient(90deg, #ff6fd8, #3813c2);
+  border-radius: 4px;
+}
+
+/* Grid for product items */
+.relatedproducts-item {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 100px;                /* same spacing as popular/shop */
+  justify-items: center;    /* center cards */
+  align-items: stretch;     /* uniform row height */
+  margin-top: 20px;
+  padding: 0 10px;
+}
+
+/* If Item component has its own styling, it will inherit
+   same hover effect / shadow consistency */
+.relatedproducts-item .item {
+  width: 120%;
+  max-width: 250px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.relatedproducts-item .item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.relatedproducts-item .item img {
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+
+.relatedproducts-item .item:hover img {
+  transform: scale(1.04);
+}
+
+.relatedproducts-item .item p {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin: 6px 0 10px;
+  min-height: 40px; /* keeps layout aligned */
+}
+
+.relatedproducts-item .item-prices {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.relatedproducts-item .item-new-price {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ff6fd8;
+}
+
+.relatedproducts-item .item-old-price {
+  font-size: 14px;
+  text-decoration: line-through;
+  color: #888;
+}
