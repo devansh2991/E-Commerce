@@ -15,7 +15,6 @@ const app = express();
 // --------------------
 const port = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
-const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:3000"];
@@ -162,17 +161,37 @@ app.get("/product/:id", async (req, res) => {
 });
 
 // ✅ Add new product
-app.post("/addproduct", async (req, res) => {
+app.post("/addproduct", upload.single("image"), async (req, res) => {
   try {
     const products = await Product.find({});
     const id = products.length > 0 ? products[products.length - 1].id + 1 : 1;
-    const product = new Product({ id, ...req.body });
+
+    // Create image URL (if image is uploaded)
+    const imageUrl = req.file
+      ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
+      : "";
+
+    const productData = {
+      id,
+      name: req.body.name,
+      category: req.body.category,
+      new_price: req.body.new_price,
+      old_price: req.body.old_price,
+      sizes: req.body.sizes ? req.body.sizes.split(",") : [],
+      quantity: req.body.quantity,
+      description: req.body.description,
+      images: [imageUrl], // ✅ Store uploaded image URL in MongoDB
+    };
+
+    const product = new Product(productData);
     await product.save();
-    res.json({ success: true, product });
+
+    res.json({ success: true, message: "Product added successfully!", product });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 // ✅ Register user
 app.post("/register", async (req, res) => {
