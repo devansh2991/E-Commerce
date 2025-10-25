@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,13 +10,15 @@ const Razorpay = require("razorpay");
 
 const app = express();
 
-// ✅ Use environment PORT or fallback
+// --------------------
+// Environment Variables
+// --------------------
 const port = process.env.PORT || 4000;
-
-// ✅ Use environment Mongo URI or fallback
-const MONGO_URI =
-  process.env.MONGO_URI ||
-  "mongodb+srv://devanshkushwah90:Dev2005@cluster0.swmpxgd.mongodb.net/E-Commerce?retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI;
+const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:3000"];
 
 // --------------------
 // Middleware
@@ -24,13 +27,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ CORS Configuration
-const allowedOrigins = [
-  "http://localhost:3000",
-];
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -65,8 +65,8 @@ const upload = multer({ storage });
 // Razorpay setup
 // --------------------
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_RNoJZSZrkLgxK7",
-  key_secret: process.env.RAZORPAY_SECRET || "msw5Wxh6NtW6eg3O7YYpP03s",
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_SECRET,
 });
 
 // --------------------
@@ -139,32 +139,27 @@ app.get("/products", async (req, res) => {
   }
 });
 
-// ✅ Get single product by ID (FIXED)
+// ✅ Get single product by ID
 app.get("/product/:id", async (req, res) => {
   try {
     const { id } = req.params;
     let product;
 
     if (mongoose.Types.ObjectId.isValid(id)) {
-      // Try MongoDB _id first
       product = await Product.findById(id);
     }
-
     if (!product) {
-      // Then try manual numeric id
       product = await Product.findOne({ id: Number(id) });
     }
 
-    if (!product) {
+    if (!product)
       return res.status(404).json({ success: false, message: "Product not found" });
-    }
 
     res.json({ success: true, product });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 
 // ✅ Add new product
 app.post("/addproduct", async (req, res) => {
@@ -184,15 +179,11 @@ app.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password)
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields required" });
+      return res.status(400).json({ success: false, message: "All fields required" });
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already registered" });
+      return res.status(400).json({ success: false, message: "Email already registered" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ name, email, password: hashedPassword });
@@ -221,7 +212,7 @@ app.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
-      process.env.JWT_SECRET || "secretkey",
+      JWT_SECRET,
       { expiresIn: "1d" }
     );
 
