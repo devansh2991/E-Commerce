@@ -14,7 +14,7 @@ const ShopContextProvider = ({ children }) => {
 
   // 🌍 Base API URL
   const API_URL =
-    process.env.REACT_APP_API_URL ||
+    import.meta.env.VITE_API_URL ||
     (window.location.hostname === "localhost"
       ? "http://localhost:4000"
       : "https://e-commerc-y0jw.onrender.com");

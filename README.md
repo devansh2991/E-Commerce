@@ -19,19 +19,19 @@ This project is currently in **development phase**.
 
 ### Homepage
 
-![Screenshot of E-Commerce](Screenshots/Screenshot%202025-09-29%20231204.png)
+![Screenshot of E-Commerce](frontend/public/assests/Screenshot%202025-09-29%20231204.png)
 
 ### Product Listing
 
-![Product Listing](https://raw.githubusercontent.com/devansh2991/E-Commerce/ed0f1bc8fe18a02894050b2f7bca1ba14e5b739e/Screenshots/Screenshot%202025-09-29%20231138.png)
+![Product Listing](https://raw.githubusercontent.com/devansh2991/E-Commerce/ed0f1bc8fe18a02894050b2f7bca1ba14e5b739e/frontend/public/assests/Screenshot%202025-09-29%20231138.png)
 
 ### Shopping Cart
 
-![Cart](https://raw.githubusercontent.com/devansh2991/E-Commerce/ed0f1bc8fe18a02894050b2f7bca1ba14e5b739e/Screenshots/Screenshot%202025-09-29%20231232.png)
+![Cart](https://raw.githubusercontent.com/devansh2991/E-Commerce/ed0f1bc8fe18a02894050b2f7bca1ba14e5b739e/frontend/public/assests/Screenshot%202025-09-29%20231232.png)
 
 ### Product Display
 
-![Product Display](https://raw.githubusercontent.com/devansh2991/E-Commerce/ed0f1bc8fe18a02894050b2f7bca1ba14e5b739e/Screenshots/Screenshot%202025-09-29%20231223.png)
+![Product Display](https://raw.githubusercontent.com/devansh2991/E-Commerce/ed0f1bc8fe18a02894050b2f7bca1ba14e5b739e/frontend/public/assests/Screenshot%202025-09-29%20231223.png)
 
 
 ---

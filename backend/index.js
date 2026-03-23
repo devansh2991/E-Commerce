@@ -52,6 +52,11 @@ mongoose
 // --------------------
 // Multer setup (for image uploads)
 // --------------------
+const fs = require('fs');
+if (!fs.existsSync('./upload/images')) {
+  fs.mkdirSync('./upload/images', { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: "./upload/images",
   filename: (req, file, cb) => {
@@ -229,6 +234,7 @@ app.post("/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ success: false, message: "Invalid credentials" });
 
+    const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,

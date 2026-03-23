@@ -1,0 +1,18 @@
+{
+    "name": "e-commerce-root",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "frontend",
+        "admin",
+        "backend"
+    ],
+    "scripts": {
+        "dev": "concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=admin\" \"npm run dev --workspace=backend\"",
+        "build": "npm run build --workspaces --if-present",
+        "install:all": "npm install"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
