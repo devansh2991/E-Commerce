@@ -11,8 +11,9 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 👇 Always connect to localhost backend
-  const API_URL = "http://localhost:4000";
+  const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === "localhost"
+    ? "http://localhost:4000"
+    : "https://e-commerc-y0jw.onrender.com");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -66,7 +67,7 @@ const Product = () => {
       <DescriptionBox description={product.description} />
       <RelatedProducts
         category={product.category}
-        currentId={product.id || product._id}
+        currentProductId={product.id || product._id}
       />
     </div>
   );

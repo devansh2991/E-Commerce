@@ -152,6 +152,7 @@ const ShopContextProvider = ({ children }) => {
         loading,
         error,
         cartItems,
+        setCartItems,
         addToCart,
         removeFromCart,
         removeAllFromCart,

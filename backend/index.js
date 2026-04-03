@@ -281,6 +281,110 @@ app.post("/cart/:userId/add", async (req, res) => {
   }
 });
 
+// ✅ Remove one item from cart
+app.post("/cart/:userId/removeOne", async (req, res) => {
+  try {
+    const { productId, size } = req.body;
+    let cart = await Cart.findOne({ userId: req.params.userId });
+    if (!cart) return res.json({ success: true, cart: { items: [] } });
+
+    const existingItem = cart.items.find(
+      (i) => i.productId === productId && i.size === (size || "")
+    );
+
+    if (existingItem) {
+      if (existingItem.quantity > 1) {
+        existingItem.quantity -= 1;
+      } else {
+        cart.items = cart.items.filter(
+          (i) => !(i.productId === productId && i.size === (size || ""))
+        );
+      }
+    }
+
+    await cart.save();
+    res.json({ success: true, cart });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Remove all of a product from cart
+app.post("/cart/:userId/removeAll", async (req, res) => {
+  try {
+    const { productId, size } = req.body;
+    let cart = await Cart.findOne({ userId: req.params.userId });
+    if (!cart) return res.json({ success: true, cart: { items: [] } });
+
+    cart.items = cart.items.filter(
+      (i) => !(i.productId === productId && i.size === (size || ""))
+    );
+
+    await cart.save();
+    res.json({ success: true, cart });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Delete product (for admin)
+app.delete("/removeproduct/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    let product;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findByIdAndDelete(id);
+    }
+    if (!product) {
+      product = await Product.findOneAndDelete({ id: Number(id) });
+    }
+    if (!product)
+      return res.status(404).json({ success: false, message: "Product not found" });
+    res.json({ success: true, message: "Product removed successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Create Razorpay Order
+app.post("/payment/orders/:userId", async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const options = {
+      amount: Math.round(amount * 100), // Convert to paise
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+    };
+    const order = await razorpay.orders.create(options);
+    res.json(order);
+  } catch (err) {
+    console.error("Razorpay order error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Verify Razorpay Payment
+app.post("/payment/verify", async (req, res) => {
+  try {
+    const crypto = require("crypto");
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    if (expectedSignature === razorpay_signature) {
+      res.json({ success: true, message: "Payment verified" });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // --------------------
 // Start Server
 // --------------------
