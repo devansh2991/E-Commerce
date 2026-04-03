@@ -12,14 +12,14 @@ const CartItems = () => {
     useContext(ShopContext);
 
   useEffect(() => {
-  const script = document.createElement("script");
-  script.src = "https://checkout.razorpay.com/v1/checkout.js";
-  script.async = true;
-  document.body.appendChild(script);
-  return () => {
-    document.body.removeChild(script);
-  };
-}, []);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const { user } = useContext(AuthContext);
   const userId = user?._id;
@@ -53,62 +53,78 @@ const CartItems = () => {
   };
 
   const handlePayment = async () => {
-  if (!userId) {
-    alert("User not logged in");
-    return;
-  }
-
-  try {
-    // Use API_URL from env or fallback
-    const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === "localhost"
-      ? "http://localhost:4000"
-      : "https://e-commerc-y0jw.onrender.com");
-
-    // 1️⃣ Create an order on your backend
-    const orderResponse = await fetch(`${API_URL}/payment/orders/${userId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: grandTotal }), // send in rupees
-    });
-
-    const orderData = await orderResponse.json();
-
-    if (!orderData || !orderData.id) {
-      alert("Failed to create order");
+    if (!userId) {
+      alert("Please log in to checkout");
+      navigate("/login");
       return;
     }
 
-    const options = {
-      key: "rzp_test_RNm6m4k3l5DRVUv",
-      amount: orderData.amount,   // backend amount in paise
-      currency: orderData.currency,
-      name: "My Shop",
-      description: "Test Transaction",
-      order_id: orderData.id,
-      handler: async (response) => {
-        const verifyResponse = await fetch(`${API_URL}/payment/verify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(response),
-        });
-        const verifyData = await verifyResponse.json();
-        if (verifyData.success) {
-          alert("🎉 Payment successful!");
-          navigate("/success");
-        } else {
-          alert("❌ Payment verification failed");
-        }
-      },
-      theme: { color: "#3399cc" },
-    };
+    try {
+      // Use API_URL from env or fallback
+      const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === "localhost"
+        ? "http://localhost:4000"
+        : "https://e-commerc-y0jw.onrender.com");
 
-    const rzp = new window.Razorpay(options);
-rzp.open();
-  } catch (error) {
-    console.error("💥 Payment error:", error);
-    alert("Payment failed, please try again.");
-  }
-};
+      // 1️⃣ Create an order on your backend
+      const orderResponse = await fetch(`${API_URL}/payment/orders/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: grandTotal }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderData || !orderData.id) {
+        alert("Failed to create order. Please try again.");
+        return;
+      }
+
+      // 2️⃣ Get Razorpay key from env (must match backend key)
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_RNoJZSZrkLgxK7";
+
+      const options = {
+        key: razorpayKey,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "E-Commerce Store",
+        description: "Order Payment",
+        order_id: orderData.id,
+        handler: async (response) => {
+          // 3️⃣ Verify payment on backend
+          const verifyResponse = await fetch(`${API_URL}/payment/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(response),
+          });
+          const verifyData = await verifyResponse.json();
+          if (verifyData.success) {
+            alert("🎉 Payment successful! Thank you for your order.");
+            // Clear the cart after successful payment
+            try {
+              await fetch(`${API_URL}/cart/${userId}/clear`, { method: "POST" });
+            } catch (e) { /* cart clear is optional */ }
+            navigate("/");
+          } else {
+            alert("❌ Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+        },
+        theme: { color: "#6c63ff" },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (response) => {
+        alert("❌ Payment failed: " + response.error.description);
+      });
+      rzp.open();
+    } catch (error) {
+      console.error("💥 Payment error:", error);
+      alert("Payment failed, please try again.");
+    }
+  };
 
 
   if (totalItems === 0) {

@@ -385,6 +385,16 @@ app.post("/payment/verify", async (req, res) => {
   }
 });
 
+// ✅ Clear cart (after successful payment)
+app.post("/cart/:userId/clear", async (req, res) => {
+  try {
+    await Cart.findOneAndDelete({ userId: req.params.userId });
+    res.json({ success: true, message: "Cart cleared" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // --------------------
 // Start Server
 // --------------------
