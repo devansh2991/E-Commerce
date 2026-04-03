@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ListProduct.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
 const ListProduct = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -11,7 +13,7 @@ const ListProduct = () => {
   // Fetch products from API
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:4000/products");
+      const res = await fetch(`${API_URL}/products`);
       const data = await res.json();
       if (data.success) {
         setProducts(data.products);
@@ -34,13 +36,13 @@ const ListProduct = () => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const res = await fetch(`http://localhost:4000/product/${id}`, {
+      const res = await fetch(`${API_URL}/removeproduct/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();
 
       if (data.success) {
-        setProducts(products.filter((product) => product.id !== id));
+        setProducts(products.filter((product) => product.id !== id && product._id !== id));
         alert("Product deleted successfully");
       } else {
         alert("Failed to delete product: " + data.message);

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import upload_area from "../../assets/upload_area.svg";
 import "./EditProduct.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const EditProduct = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`http://localhost:4000/product/${id}`);
+        const res = await fetch(`${API_URL}/product/${id}`);
         const data = await res.json();
         if (data.success) {
           const p = data.product;
@@ -102,7 +103,7 @@ const EditProduct = () => {
         } else {
           const formData = new FormData();
           formData.append("product", img);
-          const res = await fetch("http://localhost:4000/upload", {
+          const res = await fetch(`${API_URL}/upload`, {
             method: "POST",
             body: formData
           });
@@ -112,7 +113,7 @@ const EditProduct = () => {
         }
       }
 
-      const res = await fetch(`http://localhost:4000/product/${id}`, {
+      const res = await fetch(`${API_URL}/product/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...productDetails, images: uploadedImages })
@@ -178,7 +179,7 @@ const EditProduct = () => {
       <div className="addproduct-itemfield">
         <p>Sizes</p>
         <div style={{ display: "flex", gap: "18px", flexWrap: "nowrap" }}>
-          {["S","M","L","XL","XXL"].map(size => (
+          {["S", "M", "L", "XL", "XXL"].map(size => (
             <label key={size}>
               <input type="checkbox" name="sizes" value={size} checked={productDetails.sizes.includes(size)} onChange={changeHandler} /> {size}
             </label>

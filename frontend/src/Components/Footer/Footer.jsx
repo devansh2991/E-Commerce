@@ -21,18 +21,18 @@ const Footer = () => {
       </ul>
       <div className="footer-social-icon">
         <div className="footer-icons-container">
-            <img src={instagram_icon} alt="" />
+          <img src={instagram_icon} alt="" />
         </div>
         <div className="footer-icons-container">
-            <img src={pinterest_icon} alt="" />
+          <img src={pinterest_icon} alt="" />
         </div>
         <div className="footer-icons-container">
-            <img src={whatsapp_icon} alt="" />
+          <img src={whatsapp_icon} alt="" />
         </div>
       </div>
       <div className="footer-copyright">
         <hr />
-        <p>Copyright @2025 - All Rights Reserved</p>
+        <p>Copyright @2026 - All Rights Reserved</p>
       </div>
     </div>
   )

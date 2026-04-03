@@ -35,8 +35,16 @@ const ShopCategory = ({ banner, category }) => {
     fetchProducts();
   }, [category, API_URL]);
 
-  if (loading) return <p>Loading products...</p>;
-  if (products.length === 0) return <p>No products found in {category} category.</p>;
+  if (loading) return <div className="shop-category"><p style={{ textAlign: 'center', padding: '40px', fontSize: '18px' }}>Loading products...</p></div>;
+  if (products.length === 0) return (
+    <div className='shop-category'>
+      <img className='shopcategory-banner' src={banner} alt="" />
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <h2 style={{ fontSize: '24px', color: '#333', marginBottom: '12px' }}>No products found in {category} category</h2>
+        <p style={{ fontSize: '16px', color: '#777' }}>New products coming soon! Check back later.</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className='shop-category'>

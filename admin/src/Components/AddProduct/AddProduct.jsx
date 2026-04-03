@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './AddProduct.css';
 import upload_area from '../../assets/upload_area.svg';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+
 const AddProduct = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [ProductDetails, setProductDetails] = useState({
@@ -40,7 +42,7 @@ const AddProduct = () => {
     for (let i = 0; i < ProductDetails.images.length; i++) {
       let formData = new FormData();
       formData.append('product', ProductDetails.images[i]);
-      const resp = await fetch('http://localhost:4000/upload', { method: 'POST', body: formData });
+      const resp = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
       const data = await resp.json();
       if (data.success) uploadedImages.push(data.image_url);
     }
@@ -49,7 +51,7 @@ const AddProduct = () => {
       let product = { ...ProductDetails, images: uploadedImages };
       console.log("After upload:", product);
 
-      const resp = await fetch('http://localhost:4000/addproduct', {
+      const resp = await fetch(`${API_URL}/addproduct`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(product),
@@ -150,7 +152,7 @@ const AddProduct = () => {
 
       <div className="addproduct-itemfield">
         <p>Sizes</p>
-        {["S","M","L","XL","XXL"].map(size => (
+        {["S", "M", "L", "XL", "XXL"].map(size => (
           <label key={size}>
             <input type="checkbox" name="sizes" value={size} onChange={changeHandler} /> {size}
           </label>
