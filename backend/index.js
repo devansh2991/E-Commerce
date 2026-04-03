@@ -7,6 +7,7 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Razorpay = require("razorpay");
+const crypto = require("crypto");
 
 const app = express();
 
@@ -165,33 +166,69 @@ app.get("/product/:id", async (req, res) => {
   }
 });
 
-// ✅ Add new product
+// ✅ Add new product (handles both file upload and JSON with pre-uploaded URLs)
 app.post("/addproduct", upload.single("image"), async (req, res) => {
   try {
-    const products = await Product.find({});
-    const id = products.length > 0 ? products[products.length - 1].id + 1 : 1;
+    const products = await Product.find({}).sort({ id: -1 }).limit(1);
+    const id = products.length > 0 ? products[0].id + 1 : 1;
 
-    // Create image URL (if image is uploaded)
-    const imageUrl = req.file
-      ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
-      : "";
+    // Determine images: either from file upload, or from JSON body (pre-uploaded URLs)
+    let images = [];
+    if (req.file) {
+      images = [`${req.protocol}://${req.get("host")}/images/${req.file.filename}`];
+    } else if (req.body.images && Array.isArray(req.body.images)) {
+      images = req.body.images;
+    } else if (req.body.images && typeof req.body.images === "string") {
+      images = [req.body.images];
+    }
 
     const productData = {
       id,
       name: req.body.name,
       category: req.body.category,
-      new_price: req.body.new_price,
-      old_price: req.body.old_price,
-      sizes: req.body.sizes ? req.body.sizes.split(",") : [],
-      quantity: req.body.quantity,
-      description: req.body.description,
-      images: [imageUrl], // ✅ Store uploaded image URL in MongoDB
+      new_price: Number(req.body.new_price),
+      old_price: Number(req.body.old_price),
+      sizes: Array.isArray(req.body.sizes) ? req.body.sizes : (req.body.sizes ? req.body.sizes.split(",") : []),
+      quantity: Number(req.body.quantity) || 0,
+      description: req.body.description || "",
+      images,
     };
 
     const product = new Product(productData);
     await product.save();
 
     res.json({ success: true, message: "Product added successfully!", product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Update product (for admin edit)
+app.put("/product/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = {
+      name: req.body.name,
+      category: req.body.category,
+      new_price: Number(req.body.new_price),
+      old_price: Number(req.body.old_price),
+      sizes: Array.isArray(req.body.sizes) ? req.body.sizes : (req.body.sizes ? req.body.sizes.split(",") : []),
+      quantity: Number(req.body.quantity) || 0,
+      description: req.body.description || "",
+      images: req.body.images || [],
+    };
+
+    let product;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findByIdAndUpdate(id, updateData, { new: true });
+    }
+    if (!product) {
+      product = await Product.findOneAndUpdate({ id: Number(id) }, updateData, { new: true });
+    }
+    if (!product)
+      return res.status(404).json({ success: false, message: "Product not found" });
+
+    res.json({ success: true, message: "Product updated!", product });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -366,7 +403,6 @@ app.post("/payment/orders/:userId", async (req, res) => {
 // ✅ Verify Razorpay Payment
 app.post("/payment/verify", async (req, res) => {
   try {
-    const crypto = require("crypto");
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
