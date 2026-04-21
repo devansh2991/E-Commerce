@@ -1,4 +1,6 @@
 require("dotenv").config();
+require("crypto").randomBytes(32).toString("hex")
+const JWT_SECRET = process.env.JWT_SECRET
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -7,56 +9,44 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Razorpay = require("razorpay");
-const crypto = require("crypto");
+
+
 
 const app = express();
 
-// --------------------
-// Environment Variables
-// --------------------
 const port = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:3000"];
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:5173"
+];
 
-// --------------------
-// Middleware
-// --------------------
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ CORS Configuration
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: function (origin, callback) {
+    if (
+      !origin ||
+      ALLOWED_ORIGINS.includes(origin) ||
+      origin.includes("localhost")
+    ) {
+      callback(null, true);
+    } else {
+      console.log("Blocked by CORS:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
 
 app.use("/images", express.static("upload/images"));
 
-// --------------------
-// MongoDB Connection
-// --------------------
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
-
-// --------------------
-// Multer setup (for image uploads)
-// --------------------
-const fs = require('fs');
-if (!fs.existsSync('./upload/images')) {
-  fs.mkdirSync('./upload/images', { recursive: true });
-}
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
 
 const storage = multer.diskStorage({
   destination: "./upload/images",
@@ -66,17 +56,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --------------------
-// Razorpay setup
-// --------------------
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_SECRET,
 });
 
-// --------------------
-// Schemas & Models
-// --------------------
 const productSchema = new mongoose.Schema({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
@@ -115,16 +99,11 @@ const cartSchema = new mongoose.Schema({
     },
   ],
 });
+
 const Cart = mongoose.model("Cart", cartSchema);
 
-// --------------------
-// Routes
-// --------------------
-
-// ✅ Root Route
 app.get("/", (req, res) => res.send("🚀 E-Commerce Backend is running..."));
 
-// ✅ Upload image
 app.post("/upload", upload.single("product"), (req, res) => {
   if (!req.file)
     return res.status(400).json({ success: false, message: "No file uploaded" });
@@ -134,7 +113,6 @@ app.post("/upload", upload.single("product"), (req, res) => {
   });
 });
 
-// ✅ Get all products
 app.get("/products", async (req, res) => {
   try {
     const products = await Product.find({});
@@ -144,7 +122,6 @@ app.get("/products", async (req, res) => {
   }
 });
 
-// ✅ Get single product by ID
 app.get("/product/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -166,32 +143,25 @@ app.get("/product/:id", async (req, res) => {
   }
 });
 
-// ✅ Add new product (handles both file upload and JSON with pre-uploaded URLs)
 app.post("/addproduct", upload.single("image"), async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ id: -1 }).limit(1);
-    const id = products.length > 0 ? products[0].id + 1 : 1;
+    const products = await Product.find({});
+    const id = products.length > 0 ? products[products.length - 1].id + 1 : 1;
 
-    // Determine images: either from file upload, or from JSON body (pre-uploaded URLs)
-    let images = [];
-    if (req.file) {
-      images = [`${req.protocol}://${req.get("host")}/images/${req.file.filename}`];
-    } else if (req.body.images && Array.isArray(req.body.images)) {
-      images = req.body.images;
-    } else if (req.body.images && typeof req.body.images === "string") {
-      images = [req.body.images];
-    }
+    const imageUrl = req.file
+      ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
+      : "";
 
     const productData = {
       id,
       name: req.body.name,
       category: req.body.category,
-      new_price: Number(req.body.new_price),
-      old_price: Number(req.body.old_price),
-      sizes: Array.isArray(req.body.sizes) ? req.body.sizes : (req.body.sizes ? req.body.sizes.split(",") : []),
-      quantity: Number(req.body.quantity) || 0,
-      description: req.body.description || "",
-      images,
+      new_price: req.body.new_price,
+      old_price: req.body.old_price,
+      sizes: req.body.sizes ? req.body.sizes.split(",") : [],
+      quantity: req.body.quantity,
+      description: req.body.description,
+      images: [imageUrl],
     };
 
     const product = new Product(productData);
@@ -203,39 +173,6 @@ app.post("/addproduct", upload.single("image"), async (req, res) => {
   }
 });
 
-// ✅ Update product (for admin edit)
-app.put("/product/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = {
-      name: req.body.name,
-      category: req.body.category,
-      new_price: Number(req.body.new_price),
-      old_price: Number(req.body.old_price),
-      sizes: Array.isArray(req.body.sizes) ? req.body.sizes : (req.body.sizes ? req.body.sizes.split(",") : []),
-      quantity: Number(req.body.quantity) || 0,
-      description: req.body.description || "",
-      images: req.body.images || [],
-    };
-
-    let product;
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      product = await Product.findByIdAndUpdate(id, updateData, { new: true });
-    }
-    if (!product) {
-      product = await Product.findOneAndUpdate({ id: Number(id) }, updateData, { new: true });
-    }
-    if (!product)
-      return res.status(404).json({ success: false, message: "Product not found" });
-
-    res.json({ success: true, message: "Product updated!", product });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-
-// ✅ Register user
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -259,7 +196,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ✅ Login user
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -271,7 +207,6 @@ app.post("/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ success: false, message: "Invalid credentials" });
 
-    const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
@@ -284,7 +219,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Get user cart
 app.get("/cart/:userId", async (req, res) => {
   try {
     const cart = await Cart.findOne({ userId: req.params.userId });
@@ -294,7 +228,6 @@ app.get("/cart/:userId", async (req, res) => {
   }
 });
 
-// ✅ Add to cart
 app.post("/cart/:userId/add", async (req, res) => {
   try {
     const { productId, size, quantity } = req.body;
@@ -318,144 +251,44 @@ app.post("/cart/:userId/add", async (req, res) => {
   }
 });
 
-// ✅ Remove one item from cart
-app.post("/cart/:userId/removeOne", async (req, res) => {
+
+app.post("/cart/payment/order/:userId", async (req, res) => {
   try {
-    const { productId, size } = req.body;
-    let cart = await Cart.findOne({ userId: req.params.userId });
-    if (!cart) return res.json({ success: true, cart: { items: [] } });
+    const userId = req.params.userId.trim();
 
-    const existingItem = cart.items.find(
-      (i) => i.productId === productId && i.size === (size || "")
-    );
+    const cart = await Cart.findOne({
+      userId: new mongoose.Types.ObjectId(userId)
+    });
 
-    if (existingItem) {
-      if (existingItem.quantity > 1) {
-        existingItem.quantity -= 1;
-      } else {
-        cart.items = cart.items.filter(
-          (i) => !(i.productId === productId && i.size === (size || ""))
-        );
-      }
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
     }
 
-    await cart.save();
-    res.json({ success: true, cart });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+    let totalAmount = 0;
 
-// ✅ Remove all of a product from cart
-app.post("/cart/:userId/removeAll", async (req, res) => {
-  try {
-    const { productId, size } = req.body;
-    let cart = await Cart.findOne({ userId: req.params.userId });
-    if (!cart) return res.json({ success: true, cart: { items: [] } });
+    for (const item of cart.items) {
+      const product = await Product.findOne({ id: item.productId });
+      if (!product) continue;
 
-    cart.items = cart.items.filter(
-      (i) => !(i.productId === productId && i.size === (size || ""))
-    );
-
-    await cart.save();
-    res.json({ success: true, cart });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ✅ Delete product (for admin)
-app.delete("/removeproduct/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    let product;
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      product = await Product.findByIdAndDelete(id);
+      totalAmount += Number(product.new_price) * item.quantity;
     }
-    if (!product) {
-      product = await Product.findOneAndDelete({ id: Number(id) });
-    }
-    if (!product)
-      return res.status(404).json({ success: false, message: "Product not found" });
-    res.json({ success: true, message: "Product removed successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
 
-// ✅ Create Razorpay Order (with demo fallback)
-app.post("/payment/orders/:userId", async (req, res) => {
-  try {
-    const { amount } = req.body;
-    const options = {
-      amount: Math.round(amount * 100), // Convert to paise
+    if (totalAmount <= 0) {
+      return res.status(400).json({ message: "Invalid cart items" });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: totalAmount * 100,
       currency: "INR",
-      receipt: `receipt_${Date.now()}`,
-    };
+      receipt: `receipt_${userId}_${Date.now()}`
+    });
 
-    try {
-      // Try real Razorpay API first
-      const order = await razorpay.orders.create(options);
-      res.json(order);
-    } catch (razorpayErr) {
-      // If Razorpay keys are invalid, use demo/test mode
-      console.warn("⚠️ Razorpay API failed, using demo mode:", razorpayErr.error?.description || razorpayErr.message);
-      const demoOrder = {
-        id: `demo_order_${Date.now()}`,
-        entity: "order",
-        amount: options.amount,
-        amount_paid: 0,
-        amount_due: options.amount,
-        currency: options.currency,
-        receipt: options.receipt,
-        status: "created",
-        demo: true,
-      };
-      res.json(demoOrder);
-    }
+    res.json(order);
   } catch (err) {
-    console.error("Payment order error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 });
 
-// ✅ Verify Razorpay Payment (supports demo mode)
-app.post("/payment/verify", async (req, res) => {
-  try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, demo } = req.body;
 
-    // Demo mode verification
-    if (demo || (razorpay_order_id && razorpay_order_id.startsWith("demo_"))) {
-      return res.json({ success: true, message: "Demo payment verified" });
-    }
-
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_SECRET)
-      .update(body.toString())
-      .digest("hex");
-
-    if (expectedSignature === razorpay_signature) {
-      res.json({ success: true, message: "Payment verified" });
-    } else {
-      res.status(400).json({ success: false, message: "Invalid signature" });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ✅ Clear cart (after successful payment)
-app.post("/cart/:userId/clear", async (req, res) => {
-  try {
-    await Cart.findOneAndDelete({ userId: req.params.userId });
-    res.json({ success: true, message: "Cart cleared" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// --------------------
-// Start Server
-// --------------------
-app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+app.listen(port, () => console.log(`Server running on port ${port}`));
