@@ -18,8 +18,10 @@ const port = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
-  "http://localhost:5173"
-];
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URLS,
+].filter(Boolean);
 
 
 app.use(express.json());
@@ -30,7 +32,8 @@ app.use(cors({
     if (
       !origin ||
       ALLOWED_ORIGINS.includes(origin) ||
-      origin.includes("localhost")
+      origin.includes("localhost") ||
+      origin.endsWith(".vercel.app")
     ) {
       callback(null, true);
     } else {
@@ -101,6 +104,10 @@ const cartSchema = new mongoose.Schema({
 });
 
 const Cart = mongoose.model("Cart", cartSchema);
+
+const normalizeProductId = (productId) => Number(productId);
+const productIdMatches = (entryProductId, productId) =>
+  String(entryProductId) === String(productId);
 
 app.get("/", (req, res) => res.send("🚀 E-Commerce Backend is running..."));
 
@@ -231,17 +238,18 @@ app.get("/cart/:userId", async (req, res) => {
 app.post("/cart/:userId/add", async (req, res) => {
   try {
     const { productId, size, quantity } = req.body;
+    const normalizedProductId = normalizeProductId(productId);
     let cart = await Cart.findOne({ userId: req.params.userId });
     if (!cart) cart = new Cart({ userId: req.params.userId, items: [] });
 
     const existingItem = cart.items.find(
-      (i) => i.productId === productId && i.size === size
+      (i) => productIdMatches(i.productId, normalizedProductId) && i.size === size
     );
 
     if (existingItem) {
       existingItem.quantity += quantity || 1;
     } else {
-      cart.items.push({ productId, size, quantity: quantity || 1 });
+      cart.items.push({ productId: normalizedProductId, size, quantity: quantity || 1 });
     }
 
     await cart.save();
@@ -251,6 +259,74 @@ app.post("/cart/:userId/add", async (req, res) => {
   }
 });
 
+app.post("/cart/:userId/removeOne", async (req, res) => {
+  try {
+    const { productId, size = "" } = req.body;
+    const normalizedProductId = normalizeProductId(productId);
+    const cart = await Cart.findOne({ userId: req.params.userId });
+
+    if (!cart) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
+
+    const item = cart.items.find(
+      (entry) => productIdMatches(entry.productId, normalizedProductId) && entry.size === size
+    );
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Item not found in cart" });
+    }
+
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+    } else {
+      cart.items = cart.items.filter(
+        (entry) => !(productIdMatches(entry.productId, normalizedProductId) && entry.size === size)
+      );
+    }
+
+    await cart.save();
+    res.json({ success: true, cart });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post("/cart/:userId/removeAll", async (req, res) => {
+  try {
+    const { productId, size = "" } = req.body;
+    const normalizedProductId = normalizeProductId(productId);
+    const cart = await Cart.findOne({ userId: req.params.userId });
+
+    if (!cart) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
+
+    cart.items = cart.items.filter(
+      (entry) => !(productIdMatches(entry.productId, normalizedProductId) && entry.size === size)
+    );
+
+    await cart.save();
+    res.json({ success: true, cart });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get("/cart/:userId/delete/:productId", async (req, res) => {
+  try {
+    const { userId, productId } = req.params;
+    const cart = await Cart.findOne({ userId });
+    if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
+
+    const normalizedProductId = normalizeProductId(productId);
+    cart.items = cart.items.filter((item) => !productIdMatches(item.productId, normalizedProductId));
+    await cart.save();
+    res.json({ success: true, cart });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 app.post("/cart/payment/order/:userId", async (req, res) => {
   try {
@@ -291,4 +367,8 @@ app.post("/cart/payment/order/:userId", async (req, res) => {
 });
 
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+if (require.main === module && !process.env.VERCEL) {
+  app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
+module.exports = app;
