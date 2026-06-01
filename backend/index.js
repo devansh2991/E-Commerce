@@ -46,10 +46,21 @@ app.use(cors({
 
 app.use("/images", express.static("upload/images"));
 
-mongoose
-  .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
+// Lazy DB connection helper — on Vercel we defer connecting until a request arrives
+async function connectDB() {
+  if (!MONGO_URI) {
+    console.warn("MONGO_URI is not set — skipping DB connection");
+    return;
+  }
+  if (mongoose.connection && mongoose.connection.readyState === 1) return;
+  try {
+    await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("MongoDB Connected");
+  } catch (err) {
+    console.error("MongoDB Connection Error:", err);
+    throw err;
+  }
+}
 
 const storage = multer.diskStorage({
   destination: "./upload/images",
@@ -368,7 +379,12 @@ app.post("/cart/payment/order/:userId", async (req, res) => {
 
 
 if (require.main === module && !process.env.VERCEL) {
-  app.listen(port, () => console.log(`Server running on port ${port}`));
+  connectDB().then(() => {
+    app.listen(port, () => console.log(`Server running on port ${port}`));
+  }).catch((err) => {
+    console.error('Failed to start server due to DB connection error', err);
+    process.exit(1);
+  });
 }
 
-module.exports = app;
+module.exports = { app, connectDB };
