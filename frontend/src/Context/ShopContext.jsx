@@ -17,7 +17,7 @@ const ShopContextProvider = ({ children }) => {
     import.meta.env.VITE_API_URL ||
     (window.location.hostname === "localhost"
       ? "http://localhost:4000"
-      : "https://e-commerc-y0jw.onrender.com");
+      : "https://e-commerce-4-co2o.onrender.com");
 
   // 🛍️ Fetch all products
   useEffect(() => {
