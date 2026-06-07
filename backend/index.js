@@ -1,6 +1,5 @@
 require("dotenv").config();
-require("crypto").randomBytes(32).toString("hex")
-const JWT_SECRET = process.env.JWT_SECRET
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -10,19 +9,18 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Razorpay = require("razorpay");
 
-
-
 const app = express();
 
 const port = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
+
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:5173",
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URLS,
 ].filter(Boolean);
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,7 +35,6 @@ app.use(cors({
     ) {
       callback(null, true);
     } else {
-      console.log("Blocked by CORS:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
@@ -46,21 +43,33 @@ app.use(cors({
 
 app.use("/images", express.static("upload/images"));
 
-// Lazy DB connection helper — on Vercel we defer connecting until a request arrives
+let isConnected = false;
+
 async function connectDB() {
-  if (!MONGO_URI) {
-    console.warn("MONGO_URI is not set — skipping DB connection");
+  if (!MONGO_URI) throw new Error("MONGO_URI not set");
+
+  if (isConnected) return;
+
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
     return;
   }
-  if (mongoose.connection && mongoose.connection.readyState === 1) return;
-  try {
-    await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("MongoDB Connected");
-  } catch (err) {
-    console.error("MongoDB Connection Error:", err);
-    throw err;
-  }
+
+  const conn = await mongoose.connect(MONGO_URI);
+  isConnected = conn.connections[0].readyState === 1;
+
+  console.log("MongoDB Connected");
 }
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB Error:", err);
+    res.status(500).json({ success: false, message: "DB connection failed" });
+  }
+});
 
 const storage = multer.diskStorage({
   destination: "./upload/images",
@@ -75,315 +84,140 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET,
 });
 
-const productSchema = new mongoose.Schema({
-  id: { type: Number, required: true, unique: true },
-  name: { type: String, required: true },
-  images: { type: [String], default: [] },
-  category: { type: String, required: true },
-  new_price: { type: Number, required: true },
-  old_price: { type: Number, required: true },
-  sizes: { type: [String], default: [] },
-  quantity: { type: Number, default: 0 },
-  description: { type: String, default: "" },
+const Product = mongoose.model("Product", new mongoose.Schema({
+  id: { type: Number, unique: true },
+  name: String,
+  images: [String],
+  category: String,
+  new_price: Number,
+  old_price: Number,
+  sizes: [String],
+  quantity: Number,
+  description: String,
   date: { type: Date, default: Date.now },
   available: { type: Boolean, default: true },
-});
-const Product = mongoose.model("Product", productSchema);
+}));
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["user", "admin"], default: "user" },
-  createdAt: { type: Date, default: Date.now },
-  isActive: { type: Boolean, default: true },
-});
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model("User", new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  role: { type: String, default: "user" },
+}));
 
-const cartSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+const Cart = mongoose.model("Cart", new mongoose.Schema({
+  userId: mongoose.Schema.Types.ObjectId,
   items: [
     {
-      productId: { type: Number, required: true },
-      quantity: { type: Number, default: 1 },
-      size: { type: String, default: "" },
-    },
-  ],
+      productId: Number,
+      quantity: Number,
+      size: String,
+    }
+  ]
+}));
+
+app.get("/", (req, res) => {
+  res.send("Server running");
 });
 
-const Cart = mongoose.model("Cart", cartSchema);
-
-const normalizeProductId = (productId) => Number(productId);
-const productIdMatches = (entryProductId, productId) =>
-  String(entryProductId) === String(productId);
-
-app.get("/", (req, res) => res.send("🚀 E-Commerce Backend is running..."));
-
+// Upload
 app.post("/upload", upload.single("product"), (req, res) => {
-  if (!req.file)
-    return res.status(400).json({ success: false, message: "No file uploaded" });
+  if (!req.file) return res.status(400).json({ success: false });
+
   res.json({
     success: true,
     image_url: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
   });
 });
 
+// Products
 app.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find({});
-    res.json({ success: true, products });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  const products = await Product.find();
+  res.json({ success: true, products });
 });
 
-app.get("/product/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    let product;
-
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      product = await Product.findById(id);
-    }
-    if (!product) {
-      product = await Product.findOne({ id: Number(id) });
-    }
-
-    if (!product)
-      return res.status(404).json({ success: false, message: "Product not found" });
-
-    res.json({ success: true, product });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
+// Add product
 app.post("/addproduct", upload.single("image"), async (req, res) => {
-  try {
-    const products = await Product.find({});
-    const id = products.length > 0 ? products[products.length - 1].id + 1 : 1;
+  const last = await Product.findOne().sort({ id: -1 });
+  const id = last ? last.id + 1 : 1;
 
-    const imageUrl = req.file
-      ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
-      : "";
+  const imageUrl = req.file
+    ? `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
+    : "";
 
-    const productData = {
-      id,
-      name: req.body.name,
-      category: req.body.category,
-      new_price: req.body.new_price,
-      old_price: req.body.old_price,
-      sizes: req.body.sizes ? req.body.sizes.split(",") : [],
-      quantity: req.body.quantity,
-      description: req.body.description,
-      images: [imageUrl],
-    };
+  const product = new Product({
+    id,
+    name: req.body.name,
+    category: req.body.category,
+    new_price: req.body.new_price,
+    old_price: req.body.old_price,
+    sizes: req.body.sizes?.split(",") || [],
+    quantity: req.body.quantity,
+    description: req.body.description,
+    images: [imageUrl],
+  });
 
-    const product = new Product(productData);
-    await product.save();
-
-    res.json({ success: true, message: "Product added successfully!", product });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  await product.save();
+  res.json({ success: true, product });
 });
 
+// Register
 app.post("/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password)
-      return res.status(400).json({ success: false, message: "All fields required" });
+  const { name, email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ success: false, message: "Email already registered" });
+  const exists = await User.findOne({ email });
+  if (exists) return res.status(400).json({ message: "Email exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword });
-    await user.save();
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      userId: user._id,
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  const hashed = await bcrypt.hash(password, 10);
+  const user = await User.create({ name, email, password: hashed });
+
+  res.json({ success: true, userId: user._id });
 });
 
+// Login
 app.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(400).json({ success: false, message: "Invalid credentials" });
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return res.status(400).json({ message: "Invalid" });
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch)
-      return res.status(400).json({ success: false, message: "Invalid credentials" });
+  const match = await bcrypt.compare(req.body.password, user.password);
+  if (!match) return res.status(400).json({ message: "Invalid" });
 
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+  const token = jwt.sign(
+    { userId: user._id },
+    JWT_SECRET,
+    { expiresIn: "1d" }
+  );
 
-    res.json({ success: true, token, user });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+  res.json({ success: true, token });
 });
 
-app.get("/cart/:userId", async (req, res) => {
-  try {
-    const cart = await Cart.findOne({ userId: req.params.userId });
-    res.json({ success: true, items: cart ? cart.items : [] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post("/cart/:userId/add", async (req, res) => {
-  try {
-    const { productId, size, quantity } = req.body;
-    const normalizedProductId = normalizeProductId(productId);
-    let cart = await Cart.findOne({ userId: req.params.userId });
-    if (!cart) cart = new Cart({ userId: req.params.userId, items: [] });
-
-    const existingItem = cart.items.find(
-      (i) => productIdMatches(i.productId, normalizedProductId) && i.size === size
-    );
-
-    if (existingItem) {
-      existingItem.quantity += quantity || 1;
-    } else {
-      cart.items.push({ productId: normalizedProductId, size, quantity: quantity || 1 });
-    }
-
-    await cart.save();
-    res.json({ success: true, cart });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post("/cart/:userId/removeOne", async (req, res) => {
-  try {
-    const { productId, size = "" } = req.body;
-    const normalizedProductId = normalizeProductId(productId);
-    const cart = await Cart.findOne({ userId: req.params.userId });
-
-    if (!cart) {
-      return res.status(404).json({ success: false, message: "Cart not found" });
-    }
-
-    const item = cart.items.find(
-      (entry) => productIdMatches(entry.productId, normalizedProductId) && entry.size === size
-    );
-
-    if (!item) {
-      return res.status(404).json({ success: false, message: "Item not found in cart" });
-    }
-
-    if (item.quantity > 1) {
-      item.quantity -= 1;
-    } else {
-      cart.items = cart.items.filter(
-        (entry) => !(productIdMatches(entry.productId, normalizedProductId) && entry.size === size)
-      );
-    }
-
-    await cart.save();
-    res.json({ success: true, cart });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post("/cart/:userId/removeAll", async (req, res) => {
-  try {
-    const { productId, size = "" } = req.body;
-    const normalizedProductId = normalizeProductId(productId);
-    const cart = await Cart.findOne({ userId: req.params.userId });
-
-    if (!cart) {
-      return res.status(404).json({ success: false, message: "Cart not found" });
-    }
-
-    cart.items = cart.items.filter(
-      (entry) => !(productIdMatches(entry.productId, normalizedProductId) && entry.size === size)
-    );
-
-    await cart.save();
-    res.json({ success: true, cart });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.get("/cart/:userId/delete/:productId", async (req, res) => {
-  try {
-    const { userId, productId } = req.params;
-    const cart = await Cart.findOne({ userId });
-    if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
-
-    const normalizedProductId = normalizeProductId(productId);
-    cart.items = cart.items.filter((item) => !productIdMatches(item.productId, normalizedProductId));
-    await cart.save();
-    res.json({ success: true, cart });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
+// Payment
 app.post("/cart/payment/order/:userId", async (req, res) => {
-  try {
-    const userId = req.params.userId.trim();
+  const cart = await Cart.findOne({ userId: req.params.userId });
 
-    const cart = await Cart.findOne({
-      userId: new mongoose.Types.ObjectId(userId)
-    });
-
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
-    }
-
-    let totalAmount = 0;
-
-    for (const item of cart.items) {
-      const product = await Product.findOne({ id: item.productId });
-      if (!product) continue;
-
-      totalAmount += Number(product.new_price) * item.quantity;
-    }
-
-    if (totalAmount <= 0) {
-      return res.status(400).json({ message: "Invalid cart items" });
-    }
-
-    const order = await razorpay.orders.create({
-      amount: totalAmount * 100,
-      currency: "INR",
-      receipt: `receipt_${userId}_${Date.now()}`
-    });
-
-    res.json(order);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+  if (!cart || cart.items.length === 0) {
+    return res.status(400).json({ message: "Cart empty" });
   }
-});
 
+  let total = 0;
+
+  for (const item of cart.items) {
+    const product = await Product.findOne({ id: item.productId });
+    if (product) total += product.new_price * item.quantity;
+  }
+
+  const order = await razorpay.orders.create({
+    amount: total * 100,
+    currency: "INR",
+    receipt: `receipt_${Date.now()}`
+  });
+
+  res.json(order);
+});
 
 if (require.main === module && !process.env.VERCEL) {
   connectDB().then(() => {
-    app.listen(port, () => console.log(`Server running on port ${port}`));
-  }).catch((err) => {
-    console.error('Failed to start server due to DB connection error', err);
-    process.exit(1);
+    app.listen(port, () => console.log(`Running on ${port}`));
   });
 }
 
